@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineMatch - Sistema de Recomendação</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary: #e50914;
+            --primary-dark: #b81d24;
+            --primary-light: #ff3a30;
+            --dark: #141414;
+            --darker: #0a0a0a;
+            --light: #f5f5f5;
+            --gray: #2d2d2d;
+            --gold: #ffc107;
+            --teal: #20c997;
+            --purple: #6f42c1;
+            --blue: #0d6efd;
+            --orange: #fd7e14;
+        }
+
+        body {
+            background-color: var(--darker);
+            color: var(--light);
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-image: linear-gradient(rgba(10, 10, 10, 0.95), rgba(10, 10, 10, 0.95));
+            background-size: cover;
+            background-attachment: fixed;
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            color: var(--primary) !important;
+            font-size: 1.8rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .hero-section {
+            background: linear-gradient(rgba(20, 20, 20, 0.85), rgba(20, 20, 20, 0.85)),
+                url('https://images.unsplash.com/photo-1536440136628-849c177e76a1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1925&q=80');
+            background-size: cover;
+            background-position: center;
+            padding: 120px 0;
+            border-radius: 0 0 20px 20px;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, transparent 0%, var(--darker) 100%);
+            z-index: 1;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .preferences-card {
+            background-color: rgba(20, 20, 20, 0.9);
+            border: 1px solid var(--gray);
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+
+        .card-header-custom {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 15px 15px 0 0 !important;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-header-custom::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.2;
+        }
+
+        .card-header-custom h3 {
+            position: relative;
+            z-index: 1;
+        }
+
+        .form-control,
+        .form-select {
+            background-color: rgba(45, 45, 45, 0.8);
+            border: 1px solid #444;
+            color: var(--light);
+            transition: all 0.3s;
+            padding: 12px 15px;
+            border-radius: 10px;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background-color: rgba(45, 45, 45, 0.9);
+            border-color: var(--primary);
+            color: var(--light);
+            box-shadow: 0 0 0 0.25rem rgba(229, 9, 20, 0.25);
+        }
+
+        .form-range {
+            padding: 10px 0;
+        }
+
+        .form-range::-webkit-slider-thumb {
+            background-color: var(--primary);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+
+        .form-range::-moz-range-thumb {
+            background-color: var(--primary);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: none;
+        }
+
+        .form-range::-webkit-slider-track {
+            background-color: var(--gray);
+            height: 8px;
+            border-radius: 4px;
+        }
+
+        .form-range::-moz-range-track {
+            background-color: var(--gray);
+            height: 8px;
+            border-radius: 4px;
+            border: none;
+        }
+
+        .genre-radio {
+            display: none;
+        }
+
+        .genre-label {
+            display: inline-block;
+            padding: 12px 20px;
+            background-color: rgba(45, 45, 45, 0.8);
+            border: 2px solid #444;
+            border-radius: 10px;
+            color: var(--light);
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            font-weight: 500;
+            margin: 6px 8px 6px 0;
+            user-select: none;
+        }
+
+        .genre-label:hover {
+            background-color: rgba(65, 65, 65, 0.9);
+            border-color: var(--primary-light);
+        }
+
+        .genre-radio:checked+.genre-label {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-color: var(--primary);
+            color: white;
+            box-shadow: 0 4px 15px rgba(229, 9, 20, 0.3);
+        }
+
+        .genre-label.action {
+            border-left: 4px solid #e50914;
+        }
+
+        .genre-label.terror {
+            border-left: 4px solid #6f42c1;
+        }
+
+        .genre-label.comedia {
+            border-left: 4px solid #ffc107;
+        }
+
+        .genre-label.crime {
+            border-left: 4px solid #fd7e14;
+        }
+
+        .genre-label.animacao {
+            border-left: 4px solid #20c997;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border: none;
+            padding: 12px 30px;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(229, 9, 20, 0.3);
+            position: relative;
+            overflow: hidden;
+            border-radius: 10px;
+        }
+
+        .btn-primary[disabled] {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(229, 9, 20, 0.5);
+        }
+
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(rgba(255, 255, 255, 0.1), transparent);
+            transform: rotate(30deg);
+            transition: all 0.5s;
+        }
+
+        .movie-card {
+            background-color: rgba(20, 20, 20, 0.9);
+            border: 1px solid var(--gray);
+            border-radius: 15px;
+            overflow: hidden;
+            transition: all 0.4s ease;
+            height: 100%;
+            position: relative;
+            backdrop-filter: blur(5px);
+        }
+
+        .movie-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(229, 9, 20, 0.3);
+            border-color: var(--primary);
+        }
+
+        .movie-poster {
+            height: 320px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            transition: all 0.5s ease;
+            overflow: hidden;
+        }
+
+        .movie-poster img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .movie-card:hover .movie-poster {
+            transform: scale(1.01);
+        }
+
+        .movie-rating {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: var(--gold);
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+            z-index: 3;
+        }
+
+        .movie-duration {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: var(--light);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            z-index: 3;
+        }
+
+        .genre-badge {
+            background: linear-gradient(135deg, var(--teal), var(--purple));
+            color: var(--light);
+            margin-right: 5px;
+            margin-bottom: 5px;
+            border: none;
+        }
+
+        .results-section {
+            margin-top: 50px;
+        }
+
+        .section-title {
+            position: relative;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+
+        .section-title:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), transparent);
+            border-radius: 2px;
+        }
+
+        .no-results {
+            background-color: rgba(20, 20, 20, 0.9);
+            border-radius: 15px;
+            padding: 50px;
+            text-align: center;
+            border: 1px solid var(--gray);
+            backdrop-filter: blur(5px);
+        }
+
+        footer {
+            background-color: rgba(20, 20, 20, 0.9);
+            color: white;
+            border-top: 1px solid var(--gray);
+            margin-top: 80px;
+            padding: 40px 0;
+            backdrop-filter: blur(5px);
+        }
+
+        .slider-value {
+            min-width: 60px;
+            text-align: center;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border: none;
+            border-radius: 10px;
+            padding: 8px 12px;
+        }
+
+        .film-strip {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 20px;
+            background: repeating-linear-gradient(90deg,
+                    var(--darker),
+                    var(--darker) 20px,
+                    var(--gray) 20px,
+                    var(--gray) 40px);
+            z-index: 1;
+        }
+
+        .film-strip-bottom {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 20px;
+            background: repeating-linear-gradient(90deg,
+                    var(--darker),
+                    var(--darker) 20px,
+                    var(--gray) 20px,
+                    var(--gray) 40px);
+            z-index: 1;
+        }
+
+        .cinema-theme {
+            background: linear-gradient(135deg, var(--primary), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+        }
+
+        .glow-text {
+            text-shadow: 0 0 10px rgba(229, 9, 20, 0.5);
+        }
+
+        .recommendation-badge {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: linear-gradient(135deg, var(--teal), var(--purple));
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            z-index: 3;
+        }
+
+        .input-group-text {
+            background-color: rgba(45, 45, 45, 0.8);
+            border: 1px solid #444;
+            color: var(--light);
+        }
+
+        .text-muted {
+            color: white !important;
+        }
+
+        .slider-container {
+            padding: 10px 0;
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        .linha {
+            background-color: var(--primary);
+            width: 100%;
+            height: 1px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-camera-reels me-2"></i>CineMatch / <span style="color: white;">Sistema de Recomendação
+                    de Filmes</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="film-strip"></div>
+        <div class="container text-center hero-content">
+            <h1 class="display-4 fw-bold mb-4 glow-text">Encontre seu próximo filme favorito</h1>
+            <p class="lead mb-5">Nosso sistema analisa milhares de filmes para recomendar as melhores opções baseadas
+                nas suas preferências</p>
+        </div>
+        <div class="film-strip-bottom"></div>
+    </section>
+
+    <!-- Preferences Section -->
+    <section id="preferences" class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="preferences-card">
+                    <div class="card-header card-header-custom text-white py-3">
+                        <h3 class="card-title mb-0"><i class="bi bi-sliders me-2"></i>Preferências do Usuário</h3>
+                    </div>
+                    <div class="card-body p-4">
+                        <form th:action="@{/recomendar}" method="post" id="preferencesForm" novalidate>
+                            <div class="row g-4">
+
+                                <div class="col-md-6">
+                                    <!-- Score -->
+                                    <label for="score" class="form-label fw-bold cinema-theme">Selecione o Score
+                                        Adequado</label>
+                                    <div class="slider-container">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <input type="range" class="form-range flex-grow-1 me-3" id="score"
+                                                name="score" min="0" max="10" step="0.1" value="7.0" aria-label="Score">
+                                            <span class="slider-value badge fs-6" id="scoreValue">7.0</span>
+                                        </div>
+                                        <div class="slider-labels">
+                                            <span>0</span>
+                                            <span>5</span>
+                                            <span>10</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="linha"></div>
+
+                                    <!-- Duração -->
+                                    <label style="margin-top: 8px;" for="duration"
+                                        class="form-label fw-bold cinema-theme">Selecione a Duração
+                                        Adequada</label>
+                                    <div class="slider-container">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <input type="range" class="form-range flex-grow-1 me-3" id="duration"
+                                                name="duration" min="60" max="240" step="1" value="120"
+                                                aria-label="Duracao">
+                                            <span class="slider-value badge fs-6" id="durationValue">120 min</span>
+                                        </div>
+                                        <div class="slider-labels">
+                                            <span>60 min</span>
+                                            <span>150 min</span>
+                                            <span>240 min</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="linha"></div>
+
+                                    <!-- Classificação -->
+                                    <label style="margin-top: 8px;" for="classification"
+                                        class="form-label fw-bold cinema-theme">Selecione a Classificação Etária <span
+                                            class="text-danger">*</span></label>
+                                    <select class="form-select" id="classification" name="classification" required>
+                                        <option value="" selected>Selecione</option>
+                                        <option value="L">Livre</option>
+                                        <option value="10">10 anos</option>
+                                        <option value="12">12 anos</option>
+                                        <option value="14">14 anos</option>
+                                        <option value="16">16 anos</option>
+                                        <option value="18">18 anos</option>
+                                    </select>
+
+                                </div>
+
+                                <!-- Gênero -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold cinema-theme mb-3">
+                                        Gênero Preferido <span class="text-danger">*</span>
+                                    </label>
+
+                                    <div class="col-12 d-flex flex-column">
+                                        <div class="d-flex align-items-center w-100 mb-1">
+                                            <input type="radio" class="genre-radio me-2 flex-shrink-0" id="genreAction"
+                                                name="genre" value="Ação" required>
+                                            <label for="genreAction"
+                                                class="genre-label action flex-grow-1 text-center py-2">Ação</label>
+                                        </div>
+
+                                        <div class="d-flex align-items-center w-100 mb-1">
+                                            <input type="radio" class="genre-radio me-2 flex-shrink-0" id="genreTerror"
+                                                name="genre" value="Terror">
+                                            <label for="genreTerror"
+                                                class="genre-label terror flex-grow-1 text-center py-2">Terror</label>
+                                        </div>
+
+                                        <div class="d-flex align-items-center w-100 mb-1">
+                                            <input type="radio" class="genre-radio me-2 flex-shrink-0" id="genreComedia"
+                                                name="genre" value="Comédia">
+                                            <label for="genreComedia"
+                                                class="genre-label comedia flex-grow-1 text-center py-2">Comédia</label>
+                                        </div>
+
+                                        <div class="d-flex align-items-center w-100 mb-1">
+                                            <input type="radio" class="genre-radio me-2 flex-shrink-0" id="genreCrime"
+                                                name="genre" value="Crime">
+                                            <label for="genreCrime"
+                                                class="genre-label crime flex-grow-1 text-center py-2">Crime</label>
+                                        </div>
+
+                                        <div class="d-flex align-items-center w-100">
+                                            <input type="radio" class="genre-radio me-2 flex-shrink-0"
+                                                id="genreAnimacao" name="genre" value="Animação">
+                                            <label for="genreAnimacao"
+                                                class="genre-label animacao flex-grow-1 text-center py-2">Animação</label>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-text mt-2 text-muted">
+                                        Escolha apenas um gênero. Campos marcados com <span class="text-danger">*</span>
+                                        são obrigatórios.
+                                    </div>
+                                </div>
+
+                                <!-- Botão de Envio -->
+                                <div class="col-12 text-center mt-4">
+                                    <button type="submit" id="submitBtn" class="btn btn-primary btn-lg px-5 py-3"
+                                        disabled>
+                                        <i class="bi bi-search me-2"></i>Encontrar Recomendações
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Results Section -->
+    <section class="results-section container" th:if="${recomendacoes != null and !recomendacoes.empty}">
+        <h2 class="section-title">Filmes Recomendados</h2>
+
+        <div class="row g-4">
+            <div class="col-lg-4 col-md-6" th:each="filme, iterStat : ${recomendacoes}" th:if="${iterStat.index < 3}">
+                <div class="movie-card">
+                    <div class="recommendation-badge">
+                        <i class="bi bi-star-fill me-1"></i>Recomendado
+                    </div>
+
+                    <!-- USANDO <img> ao invés de background-image para maior confiabilidade -->
+                    <div class="movie-poster">
+                        <img th:src="${filme.caminhoPoster}" alt="Poster"
+                            style="width:100%; height:320px; object-fit:cover; display:block;"
+                            onerror="this.src='/images/placeholder_poster.png'; this.style.objectFit='cover';"
+                            th:alt="${filme.titulo} + ' Poster'">
+                        <div class="movie-rating">
+                            <i class="bi bi-star-fill me-1"></i>
+                            <span th:text="${filme.nota}">8.5</span>
+                        </div>
+                        <div class="movie-duration" th:text="${filme.duracao} + ' min'">142 min</div>
+                    </div>
+
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title mb-0" th:text="${filme.titulo}">Título do Filme</h5>
+                            <div>
+                                <small class="text-muted"
+                                    th:text="${'Diretor: ' + (filme.diretor != null && filme.diretor != '' ? filme.diretor : '')}"></small>
+                                &nbsp; &nbsp;
+                                <small class="text-muted"
+                                    th:text="${'Estrela: ' + (filme.estrela != null && filme.estrela != '' ? filme.estrela : '')}"></small>
+                            </div>
+                            <span class="badge bg-dark" th:text="${filme.classificacao}">PG-13</span>
+                        </div>
+                        <p class="card-text text-muted small" th:text="${filme.descricao}">Descrição breve do filme,
+                            enredo ou informações relevantes.</p>
+                        <div class="mb-3">
+                            <span th:each="genero : ${filme.generos}" class="badge genre-badge"
+                                th:text="${genero}">Ação</span>
+                        </div>
+                        <div class="d-grid">
+                            <button class="btn btn-outline-primary btn-sm">Ver Detalhes</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- No Results Message -->
+    <section class="container mt-5" th:if="${recomendacoes == null or recomendacoes.empty}">
+        <div class="no-results">
+            <i class="bi bi-exclamation-triangle display-1 text-warning mb-3"></i>
+            <h3>Nenhum filme encontrado</h3>
+            <p class="text-muted">Não encontramos filmes que correspondam aos seus critérios. Tente ajustar suas
+                preferências.</p>
+            <a href="#preferences" class="btn btn-primary mt-3">Ajustar Preferências</a>
+        </div>
+    </section>
+
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center">
+            <h4><i class="bi bi-camera-reels me-2 text-primary"></i>CineMatch</h4>
+            <p class="text-muted">Sistema de Recomendação de Filmes - Inteligência de Negócios</p>
+            <p class="text-muted">Created By: Lucas Amara Luciano - 2025</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Script para atualizar os valores dos sliders e validação -->
+    <script>
+        // Atualizar valor do score
+        const scoreSlider = document.getElementById('score');
+        const scoreValue = document.getElementById('scoreValue');
+
+        scoreSlider.addEventListener('input', function () {
+            scoreValue.textContent = this.value;
+            validateForm();
+        });
+
+        // Atualizar valor da duração
+        const durationSlider = document.getElementById('duration');
+        const durationValue = document.getElementById('durationValue');
+
+        durationSlider.addEventListener('input', function () {
+            durationValue.textContent = this.value + ' min';
+            validateForm();
+        });
+
+        // radios e classification
+        const genreRadios = Array.from(document.querySelectorAll('input[name="genre"]'));
+        const classificationSelect = document.getElementById('classification');
+        const submitBtn = document.getElementById('submitBtn');
+
+        // habilita foco por teclado acessível
+        document.querySelectorAll('.genre-label').forEach(lbl => {
+            lbl.setAttribute('tabindex', '0');
+            lbl.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    const forId = lbl.getAttribute('for');
+                    const input = document.getElementById(forId);
+                    if (input) input.checked = true;
+                    validateForm();
+                }
+            });
+        });
+
+        // event listeners para radios e select
+        genreRadios.forEach(r => r.addEventListener('change', validateForm));
+        classificationSelect.addEventListener('change', validateForm);
+
+        // validação: classification selecionado e algum gênero selecionado
+        function isGenreSelected() {
+            return genreRadios.some(r => r.checked);
+        }
+
+        function isClassificationSelected() {
+            return classificationSelect && classificationSelect.value && classificationSelect.value.trim() !== '';
+        }
+
+        function validateForm() {
+            // score and duration always have a value because sliders have defaults
+            const ok = isGenreSelected() && isClassificationSelected();
+            submitBtn.disabled = !ok;
+            return ok;
+        }
+
+        // previne envio se não validado (segurança extra)
+        const form = document.getElementById('preferencesForm');
+        form.addEventListener('submit', function (e) {
+            if (!validateForm()) {
+                e.preventDefault();
+                e.stopPropagation();
+                // mostrar dica leve
+                alert('Por favor selecione uma classificação e um gênero antes de enviar.');
+                return false;
+            }
+            return true;
+        });
+
+        // inicializa estado do botão
+        validateForm();
+
+        // Adicionar efeito de clique nos botões (visuais)
+        document.querySelectorAll('.btn').forEach(button => {
+            button.addEventListener('click', function () {
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+            });
+        });
+    </script>
+</body>
+
+</html>
